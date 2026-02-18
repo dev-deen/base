@@ -1,4 +1,4 @@
-    openapi: 3.0.0
+openapi: 3.0.0
 info:
   title: User Management API
   description: A comprehensive API for managing users, profiles, and authentication
@@ -405,4 +405,3 @@ security:
   - bearerAuth: []
   - oauth2:
       - read:users
-      - write:users
