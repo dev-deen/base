@@ -3,36 +3,228 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>API Documentation - User Management API</title>
-    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui.css">
+    <title>API Specification - JSON Viewer</title>
+    <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
     <style>
         body {
+            font-family: 'Courier New', monospace;
             margin: 0;
-            padding: 0;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+        }
+        h1 {
+            color: #4ec9b0;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        #json-viewer {
+            background: #252526;
+            padding: 20px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .json-key {
+            color: #9cdcfe;
+        }
+        .json-string {
+            color: #ce9178;
+        }
+        .json-number {
+            color: #b5cea8;
+        }
+        .json-boolean {
+            color: #569cd6;
+        }
+        .json-null {
+            color: #569cd6;
+        }
+        .expandable {
+            cursor: pointer;
+            user-select: none;
+        }
+        .expandable:hover {
+            background: #2d2d30;
+        }
+        .collapsed > .children {
+            display: none;
+        }
+        .toggle {
+            display: inline-block;
+            width: 15px;
+            color: #808080;
+        }
+        a {
+            color: #4ec9b0;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .anchor {
+            scroll-margin-top: 20px;
+        }
+        .controls {
+            margin-bottom: 20px;
+        }
+        button {
+            background: #0e639c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #1177bb;
         }
     </style>
 </head>
 <body>
-    <div id="swagger-ui"></div>
-    <script src="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-bundle.js"></script>
-    <script src="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-standalone-preset.js"></script>
+    <div class="container">
+        <h1>API Specification - JSON Viewer</h1>
+        <div class="controls">
+            <button onclick="expandAll()">Expand All</button>
+            <button onclick="collapseAll()">Collapse All</button>
+            <a href="baseV1.yaml" download style="margin-left: 10px;">
+                <button>Download YAML</button>
+            </a>
+        </div>
+        <div id="json-viewer">Loading...</div>
+    </div>
+
     <script>
-        window.onload = function() {
-            const ui = SwaggerUIBundle({
-                url: "baseV1.yaml",
-                dom_id: '#swagger-ui',
-                deepLinking: true,
-                presets: [
-                    SwaggerUIBundle.presets.apis,
-                    SwaggerUIStandalonePreset
-                ],
-                plugins: [
-                    SwaggerUIBundle.plugins.DownloadUrl
-                ],
-                layout: "StandaloneLayout"
+        let jsonData = null;
+
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        function createAnchor(path) {
+            return path.replace(/\//g, '~1').replace(/\./g, '-');
+        }
+
+        function renderValue(value, key, path) {
+            if (value === null) {
+                return `<span class="json-null">null</span>`;
+            }
+            
+            const type = typeof value;
+            
+            if (type === 'boolean') {
+                return `<span class="json-boolean">${value}</span>`;
+            }
+            
+            if (type === 'number') {
+                return `<span class="json-number">${value}</span>`;
+            }
+            
+            if (type === 'string') {
+                return `<span class="json-string">"${escapeHtml(value)}"</span>`;
+            }
+            
+            if (Array.isArray(value)) {
+                if (value.length === 0) {
+                    return '<span>[]</span>';
+                }
+                
+                let html = '<span class="expandable" onclick="toggleExpand(this)">';
+                html += '<span class="toggle">▼</span>[</span>';
+                html += '<div class="children" style="margin-left: 20px;">';
+                
+                value.forEach((item, index) => {
+                    html += `<div>${renderValue(item, index, path + '/' + index)}${index < value.length - 1 ? ',' : ''}</div>`;
+                });
+                
+                html += '</div><span>]</span>';
+                return html;
+            }
+            
+            if (type === 'object') {
+                const keys = Object.keys(value);
+                if (keys.length === 0) {
+                    return '<span>{}</span>';
+                }
+                
+                const anchor = createAnchor(path);
+                let html = `<span class="expandable anchor" id="${anchor}" onclick="toggleExpand(this)">`;
+                html += '<span class="toggle">▼</span>{</span>';
+                html += '<div class="children" style="margin-left: 20px;">';
+                
+                keys.forEach((k, index) => {
+                    const newPath = path + '/' + k;
+                    const keyAnchor = createAnchor(newPath);
+                    html += `<div id="${keyAnchor}" class="anchor">`;
+                    html += `<span class="json-key">"${escapeHtml(k)}"</span>: `;
+                    html += renderValue(value[k], k, newPath);
+                    html += index < keys.length - 1 ? ',' : '';
+                    html += '</div>';
+                });
+                
+                html += '</div><span>}</span>';
+                return html;
+            }
+            
+            return String(value);
+        }
+
+        function toggleExpand(element) {
+            element.parentElement.classList.toggle('collapsed');
+            const toggle = element.querySelector('.toggle');
+            if (toggle) {
+                toggle.textContent = element.parentElement.classList.contains('collapsed') ? '▶' : '▼';
+            }
+        }
+
+        function expandAll() {
+            document.querySelectorAll('.expandable').forEach(el => {
+                el.parentElement.classList.remove('collapsed');
+                const toggle = el.querySelector('.toggle');
+                if (toggle) toggle.textContent = '▼';
             });
-            window.ui = ui;
-        };
+        }
+
+        function collapseAll() {
+            document.querySelectorAll('.expandable').forEach(el => {
+                el.parentElement.classList.add('collapsed');
+                const toggle = el.querySelector('.toggle');
+                if (toggle) toggle.textContent = '▶';
+            });
+        }
+
+        // Load and render YAML as JSON
+        fetch('baseV1.yaml')
+            .then(response => response.text())
+            .then(yamlText => {
+                jsonData = jsyaml.load(yamlText);
+                const viewer = document.getElementById('json-viewer');
+                viewer.innerHTML = renderValue(jsonData, 'root', '');
+                
+                // Handle deep linking
+                if (window.location.hash) {
+                    const target = document.getElementById(window.location.hash.substring(1));
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth' });
+                        target.style.background = '#3e3e42';
+                        setTimeout(() => target.style.background = '', 2000);
+                    }
+                }
+            })
+            .catch(error => {
+                document.getElementById('json-viewer').innerHTML = 
+                    `<span style="color: #f48771;">Error loading specification: ${escapeHtml(error.message)}</span>`;
+            });
     </script>
 </body>
 </html>

@@ -20,7 +20,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: 'https://dev-deen.github.io/base/baseV1.yaml#/components/schemas/LoginRequest'
+              $ref: 'https://dev-deen.github.io/base/baseV1.yaml#/components/schemas/login'
       responses:
         '200':
           description: Login successful
