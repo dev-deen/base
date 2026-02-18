@@ -403,3 +403,6 @@ components:
 
 security:
   - bearerAuth: []
+  - oauth2:
+      - read:users
+      - write:users
