@@ -1,0 +1,13 @@
+{
+  "name": "@dev-deen/api-spec",
+  "version": "1.0.0",
+  "description": "Central API specification",
+  "files": [
+    "baseV1.yaml",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dev-deen/base.git"
+  }
+}
