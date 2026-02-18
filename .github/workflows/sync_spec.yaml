@@ -6,9 +6,7 @@ on:
       - dev
     paths:
       - 'baseV1.yaml'
-  
-  workflow_dispatch
-
+  workflow_dispatch:
 
 jobs:
   sync-to-downstream:
